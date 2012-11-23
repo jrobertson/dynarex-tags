@@ -21,7 +21,7 @@ class DynarexTags
 
     category_dynarex.to_h.each do |item| 
 
-      title, url = item.values
+      title, url = item.values[0..1]
       title.scan(/#(\w+)/).flatten.each {|tag| save_tag(h, tag, title, url)}
     end
 
