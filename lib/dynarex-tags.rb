@@ -22,6 +22,8 @@ class DynarexTags
     category_dynarex.to_h.each do |item|
       
       url, title = item.values[0..1]
+      next unless title.is_a? String
+      
       fields = title.scan(/#(\w+)/)
       next if fields.empty?
       
