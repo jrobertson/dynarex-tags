@@ -23,7 +23,7 @@ class DynarexTags
       
       url, title = item.values[0..1]
       fields = title.scan(/#(\w+)/)
-      next unless fields
+      next if fields.empty?
       
       fields.flatten.each {|tag| save_tag(h, tag, title, url)}
     end
@@ -34,7 +34,7 @@ class DynarexTags
   def save_title_tags(title, url)
 
     fields = title.scan(/#(\w+)/)
-    return unless fields
+    return if fields.empty?
     
     if File.exists? @index_filename then
       dynarex = Dynarex.new @index_filename

@@ -19,10 +19,13 @@ class DynarexTags
     h = {}
     category_dynarex = Dynarex.new category_url
 
-    category_dynarex.to_h.each do |item| 
-
+    category_dynarex.to_h.each do |item|
+      
       url, title = item.values[0..1]
-      title.scan(/#(\w+)/).flatten.each {|tag| save_tag(h, tag, title, url)}
+      fields = title.scan(/#(\w+)/)
+      next unless fields
+      
+      fields.flatten.each {|tag| save_tag(h, tag, title, url)}
     end
 
     save_dynarex_index(h)
@@ -30,6 +33,9 @@ class DynarexTags
 
   def save_title_tags(title, url)
 
+    fields = title.scan(/#(\w+)/)
+    return unless fields
+    
     if File.exists? @index_filename then
       dynarex = Dynarex.new @index_filename
     else
@@ -41,7 +47,7 @@ class DynarexTags
       r.merge({x[:keyword] => x[:count].to_i})
     end
 
-    title.scan(/#(\w+)/).flatten.each {|tag| save_tag(h,tag, title, url)}
+    fields.flatten.each {|tag| save_tag(h,tag, title, url)}
     save_dynarex_index(h)
   end
 
