@@ -27,7 +27,7 @@ class DynarexTags
       fields = title.scan(/#(\w+)/)
       next if fields.empty?
       
-      fields.flatten.each {|tag| save_tag(h, tag, title, url)}
+      fields.flatten.uniq.each {|tag| save_tag(h, tag, title, url)}
     end
 
     save_dynarex_index(h)
@@ -49,7 +49,7 @@ class DynarexTags
       r.merge({x[:keyword] => x[:count].to_i})
     end
 
-    fields.flatten.each {|tag| save_tag(h,tag, title, url)}
+    fields.flatten.uniq.each {|tag| save_tag(h,tag, title, url)}
     save_dynarex_index(h)
   end
 
