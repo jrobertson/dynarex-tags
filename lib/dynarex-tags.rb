@@ -14,15 +14,21 @@ class DynarexTags
     @index_filename = File.join(tags_parent_path, 'dxtags.xml')
   end
 
-  def generate(category_url)
+  def generate(category_url, &blk)
 
     h = {}
     dx = Dynarex.new category_url
 
     dx.all.each do |x|
       
-      x.title.scan(/\B#(\w+)/).map(&:first).uniq\
-                                 .each {|tag| save_tag(h, tag, x.title, x.url)}
+      a = if block_given? then
+        blk.call(x)
+      else
+        x.title.scan(/\B#(\w+)/).map(&:first).uniq\
+                        .map{|tag| [tag, x.title, x.url]}
+      end
+      
+      a.each {|tag, title, url| save_tag(h, tag, title, url)}
     end
 
     save_dynarex_index(h)
