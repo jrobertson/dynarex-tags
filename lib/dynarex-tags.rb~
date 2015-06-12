@@ -9,9 +9,10 @@ class DynarexTags
 
   def initialize(tags_parent_path)
 
-    FileUtils.mkdir_p File.join(tags_parent_path, 'tags')
-    Dir.chdir File.join(tags_parent_path, 'tags')
+    @tags_path = File.join(tags_parent_path, 'tags')
+    FileUtils.mkdir_p @tags_path
     @index_filename = File.join(tags_parent_path, 'dxtags.xml')
+    
   end
 
   def generate(category_url, &blk)
@@ -27,7 +28,7 @@ class DynarexTags
         x.title.scan(/\B#(\w+)/).map(&:first).uniq\
                         .map{|tag| [tag, x.title, x.url]}
       end
-      
+
       a.each {|tag, title, url| save_tag(h, tag, title, url)}
     end
 
@@ -39,8 +40,11 @@ class DynarexTags
 
   def save_dynarex_index(h)
     
-    dx = Dynarex.new('tags/tag(keyword,count)')
+    s = File.exists?(@index_filename) ? \
+                                @index_filename : 'tags/tag(keyword,count)'
+    dx = Dynarex.new s
     h.each {|tag,count| dx.create keyword: tag, count: count.to_s}
+    
     dx.save @index_filename
   end
 
@@ -49,7 +53,8 @@ class DynarexTags
     tagfile = tag + '.xml'    
     buffer, h[tag] = h[tag] ? [tagfile, h[tag].succ] \
                                                 : ['items/item(title,url)', '1']
-    Dynarex.new(buffer).create(url: url, title: title).save tagfile
+    Dynarex.new(buffer).create(url: url, title: title)\
+                                         .save File.join(@tags_path, tagfile)
   end
   
 end
