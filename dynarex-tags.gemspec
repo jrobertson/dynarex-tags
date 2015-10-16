@@ -1,10 +1,10 @@
 Gem::Specification.new do |s|
   s.name = 'dynarex-tags'
-  s.version = '0.2.3'
+  s.version = '0.2.5'
   s.summary = 'dynarex-tags'
   s.authors = ['James Robertson']
   s.files = Dir['lib/**/*.rb']
-  s.add_runtime_dependency('dynarex', '~> 1.5', '>=1.5.23') 
+  s.add_runtime_dependency('dynarex', '~> 1.5', '>=1.5.28') 
   s.signing_key = '../privatekeys/dynarex-tags.pem'
   s.cert_chain  = ['gem-public_cert.pem']
   s.license = 'MIT'
