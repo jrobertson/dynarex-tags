@@ -5,6 +5,7 @@
 require 'dynarex'
 require 'fileutils'
 
+
 class DynarexTags
 
   def initialize(tags_parent_path, tagfile_xslt: nil, indexfile_xslt: nil)
@@ -17,15 +18,15 @@ class DynarexTags
     
   end
 
-  def generate(category_url, &blk)
+  def generate(indexfilename='index.xml', &blk)
        
     s = File.exists?(@index_filename) ? \
                                 @index_filename : 'tags/tag(keyword,count)'
-    dxindex = Dynarex.new s    
+    dxindex = Dynarex.new s, json_out: false    
     dxindex.xslt = @indexfile_xslt if @indexfile_xslt
     h = dxindex.all.inject({}) {|r,x|  r.merge(x.keyword => x.count) }
     
-    dx = Dynarex.new category_url
+    dx = Dynarex.new indexfilename
 
     dx.all.each do |x|
       
@@ -61,7 +62,8 @@ class DynarexTags
     tagfile = File.join(@tags_path, tag + '.xml')
     buffer, h[tag] = h[tag] ? [tagfile, h[tag].succ] \
                                              : ['items/item(title,url)', '1']
-    dx = Dynarex.new(buffer)
+    dx = Dynarex.new(buffer, json_out: false)
+
     dx.xslt = @tagfile_xslt if @tagfile_xslt
     dx.create(url: url, title: title)
 
