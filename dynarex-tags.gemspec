@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'dynarex-tags'
-  s.version = '0.3.0'
+  s.version = '0.3.1'
   s.summary = 'dynarex-tags'
   s.authors = ['James Robertson']
   s.files = Dir['lib/dynarex-tags.rb']

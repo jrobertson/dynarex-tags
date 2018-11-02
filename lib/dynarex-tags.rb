@@ -15,19 +15,41 @@ class DynarexTags
     @tags_path = File.join(tags_parent_path, 'tags')
     FileUtils.mkdir_p @tags_path
     @index_filename = File.join(tags_parent_path, 'dxtags.xml')        
+
+    s = File.exists?(@index_filename) ? \
+                                @index_filename : 'tags/tag(keyword,count)'    
+
+    @dxindex = Dynarex.new s, json_out: false    
+    @dxindex.xslt = @indexfile_xslt if @indexfile_xslt    
     
+  end
+
+  def find(tag)
+
+    rx = @dxindex.find tag.downcase
+
+    if rx then
+
+      tagfile = File.join(@tags_path, tag.downcase + '.xml')
+      dx = Dynarex.new(tagfile, json_out: false)
+      r = dx.all
+      
+      def r.to_md()
+        self.map {|x| "* [%s](%s)" % [x.title, x.url]}.join("\n")
+      end
+      
+      return r
+
+    end
+
   end
 
   def generate(indexfilename='index.xml', &blk)
        
-    s = File.exists?(@index_filename) ? \
-                                @index_filename : 'tags/tag(keyword,count)'
-    dxindex = Dynarex.new s, json_out: false    
-    dxindex.xslt = @indexfile_xslt if @indexfile_xslt
-    h = dxindex.all.inject({}) {|r,x|  r.merge(x.keyword => x.count) }
-    
     dx = Dynarex.new indexfilename
 
+    h = @dxindex.all.inject({}) {|r,x|  r.merge(x.keyword => x.count) }    
+    
     dx.all.each do |x|
       
       a = if block_given? then
@@ -39,18 +61,19 @@ class DynarexTags
 
       a.each {|tag, title, url| save_tag(h, tag.downcase, title, url)}
     end
+
     
     h.each do |tag,count| 
       
-      if dxindex.record_exists? tag then
-        dxindex.update(tag, {count: count.to_s})
+      if @dxindex.record_exists? tag then
+        @dxindex.update(tag, {count: count.to_s})
       else
-        dxindex.create({keyword: tag, count: count.to_s}, id: tag)
+        @dxindex.create({keyword: tag, count: count.to_s}, id: tag)
       end
       
     end
 
-    dxindex.save @index_filename    
+    @dxindex.save @index_filename    
   end
 
 
