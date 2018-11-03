@@ -7,18 +7,26 @@ require 'fileutils'
 
 
 class DynarexTags
+  include RXFHelperModule
+  using ColouredText
 
-  def initialize(tags_parent_path, tagfile_xslt: nil, indexfile_xslt: nil)
+  def initialize(tags_parent_path, tagfile_xslt: nil, indexfile_xslt: nil, 
+                 debug: false)
 
-    @tagfile_xslt, @indexfile_xslt = tagfile_xslt, indexfile_xslt
+    puts ('tags_parent_path: '  + tags_parent_path).debug if debug
+    @filepath = tags_parent_path
+    
+    @tagfile_xslt, @indexfile_xslt, @debug = tagfile_xslt, 
+        indexfile_xslt, debug
     
     @tags_path = File.join(tags_parent_path, 'tags')
-    FileUtils.mkdir_p @tags_path
+    FileX.mkdir_p @tags_path
     @index_filename = File.join(tags_parent_path, 'dxtags.xml')        
 
-    s = File.exists?(@index_filename) ? \
+    s = FileX.exists?(@index_filename) ? \
                                 @index_filename : 'tags/tag(keyword,count)'    
 
+    puts ('dxtags filepath: ' + s.inspect).debug if debug
     @dxindex = Dynarex.new s, json_out: false    
     @dxindex.xslt = @indexfile_xslt if @indexfile_xslt    
     
@@ -27,7 +35,8 @@ class DynarexTags
   def find(tag)
 
     rx = @dxindex.find tag.downcase
-
+    puts ('rx: ' + rx.inspect).debug if @debug
+    
     if rx then
 
       tagfile = File.join(@tags_path, tag.downcase + '.xml')
@@ -44,7 +53,7 @@ class DynarexTags
 
   end
 
-  def generate(indexfilename='index.xml', &blk)
+  def generate(indexfilename=File.join(@filepath, 'index.xml'), &blk)
        
     dx = Dynarex.new indexfilename
 
