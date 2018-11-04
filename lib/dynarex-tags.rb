@@ -27,14 +27,73 @@ class DynarexTags
                                 @index_filename : 'tags/tag(keyword,count)'    
 
     puts ('dxtags filepath: ' + s.inspect).debug if debug
-    @dxindex = Dynarex.new s, json_out: false    
-    @dxindex.xslt = @indexfile_xslt if @indexfile_xslt    
+    @dxtags = Dynarex.new s, json_out: false
+    @dxtags.xslt = @indexfile_xslt if @indexfile_xslt    
     
+  end
+  
+  def add(title: nil, url: nil)
+    
+    
+    puts ('title: ' + title.inspect).debug if @debug
+    puts ('url: ' + url.inspect).debug if @debug
+    
+    h = @dxtags.all.inject({}) {|r,x|  r.merge(x.keyword.downcase => x.count) }
+    
+    a = title.scan(/(?<=\B#)[\w_]+/).uniq
+
+    a.each do |tag|
+      
+      t = tag.downcase
+      
+      h[t] = save_tag(h[t], t, title, url)
+
+      if @dxtags.record_exists? tag then
+        @dxtags.update(tag, {count: h[t]})
+      else
+        @dxtags.create({keyword: tag, count: h[t]}, id: t)
+      end
+
+    end    
+    
+    @dxtags.save @index_filename  
+
+  end
+  
+  def delete(title)
+    
+    # find the title in each of the tags file directory
+    a = title.downcase.scan(/(?<=#)[\w_]+/)
+    
+    a.each do |tag|
+
+      puts ("deleting tag: %s for title: %s" % [tag, title]).debug if @debug
+      tagfile = File.join(@tags_path, tag + '.xml')
+      dx = Dynarex.new(tagfile, json_out: false, autosave: true)      
+      rx = dx.find_by_title title
+      rx.delete            
+      dx.rm if dx.all.empty?
+
+      # find the title in dxtags.xml and delete it       
+      entry = @dxtags.find tag
+      
+      next unless entry
+      
+      if entry.count == '1' then
+        entry.delete
+      else
+        entry.count = entry.count.to_i - 1
+      end
+      
+    end
+    
+    @dxtags.save @index_filename 
+
   end
 
   def find(tag)
 
-    rx = @dxindex.find tag.downcase
+    rx = @dxtags.find tag.downcase
     puts ('rx: ' + rx.inspect).debug if @debug
     
     if rx then
@@ -57,7 +116,7 @@ class DynarexTags
        
     dx = Dynarex.new indexfilename
 
-    h = @dxindex.all.inject({}) {|r,x|  r.merge(x.keyword => x.count) }    
+    h = @dxtags.all.inject({}) {|r,x|  r.merge(x.keyword.downcase => x.count) }    
     
     dx.all.each do |x|
       
@@ -68,38 +127,47 @@ class DynarexTags
                         .map{|tag| [tag, x.title, x.url]}
       end
 
-      a.each {|tag, title, url| save_tag(h, tag.downcase, title, url)}
+      a.each do |tag, title, url|
+        
+        t = tag.downcase
+        
+        h[t] = save_tag(h[t], t, title, url)
+        
+      end
     end
 
     
-    h.each do |tag,count| 
+    h.each do |tag, count| 
       
-      if @dxindex.record_exists? tag then
-        @dxindex.update(tag, {count: count.to_s})
+      if @dxtags.record_exists? tag then
+        @dxtags.update(tag, {count: count.to_s})
       else
-        @dxindex.create({keyword: tag, count: count.to_s}, id: tag)
+        @dxtags.create({keyword: tag, count: count.to_s}, id: tag.downcase)
       end
       
     end
+    
+    @dxtags.save @index_filename  
 
-    @dxindex.save @index_filename    
-  end
+  end  
 
 
   private
 
 
-  def save_tag(h, tag, title, url)
+  def save_tag(tag_count, tag, title, url)
     
+    puts ('tag_count: ' + tag_count.inspect).debug if @debug
     tagfile = File.join(@tags_path, tag + '.xml')
-    buffer, h[tag] = h[tag] ? [tagfile, h[tag].succ] \
-                                             : ['items/item(title,url)', '1']
+    buffer = tag_count ? tagfile : 'items/item(title,url)'
+
     dx = Dynarex.new(buffer, json_out: false)
 
     dx.xslt = @tagfile_xslt if @tagfile_xslt
     dx.create(url: url, title: title)
 
     dx.save tagfile
+    dx.all.length
   end
   
 end
