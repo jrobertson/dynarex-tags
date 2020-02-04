@@ -149,7 +149,18 @@ class DynarexTags
     
     @dxtags.save @index_filename  
 
-  end  
+  end
+
+  def tags()  
+    
+    @dxtags.all.inject({}) do |r, x|
+      tagfile = File.join(@tags_path, x.keyword.downcase + '.xml')
+      dx = Dynarex.new(tagfile, json_out: false)
+      r.merge({x.keyword.downcase => dx.all.map(&:to_h)})
+    end
+    
+    
+  end
 
 
   private
